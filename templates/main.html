@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<head>
+	<title>test</title>
+	<meta charset="UTF-8" />
+	<meta name="" content="Basic web dev" />
+	<link rel="stylesheet"; type='text/css' href="{{ url_for('static', filename='style/main.css')}}" />
+	<script src="{{ url_for('static', filename='js/jquery-3.2.1.min.js')}}"></script>
+	<script src="{{ url_for('static', filename='js/sender.js')}}"></script>
+</head>
+<body>
+	<div id="input-container">
+		<form action = "http://localhost:5000/upload" method = "POST" id='img-form'
+			enctype = "multipart/form-data">
+			<input type = "file" name = "file" id='uploadimage' />
+			<input type = "submit" id='form-submit'/>
+		</form>
+		<div id='btn-div'>
+			<button id='save-btn'>save</button>
+			<button id='rect-btn'>Draw Rect</button>
+		
+			<button id='draw-fg'>label foreground</button>
+			<button id='draw-bg'>label background</button>
+		</div>
+	</div>
+	<div id="canvas-container">
+		<canvas id="myCanvas" width="800" height="500"
+			style="border:1px solid #000000;">
+		</canvas>
+		<canvas id="myCanvas2" width="800" height="500"
+			style="border:1px solid #000000;">
+		</canvas>
+		<canvas id="myCanvas3" width="800" height="500"
+			style="border:1px solid #000000;">
+		</canvas>
+	</div>
+</body>
