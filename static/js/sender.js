@@ -77,7 +77,7 @@ $(function() {
 				//creating cost function of the image for each pixels
 				var images = canvas.toDataURL();
 				// download('file.png', images);
-				// document.getElementsByTagName('form')[0].submit();
+				document.getElementsByTagName('form')[0].submit();
 			};
 		});
 		//varibles to store the user input
@@ -283,7 +283,7 @@ $(function() {
 		var blob = dataURItoBlob(dataURL);
 		var fd = new FormData(document.forms[0]);
 		fd.append("canvasImage", blob);
-		console.log(fd);
+		// console.log(fd);
 		$.ajax({
 			type : "POST",
 			url : '/uploadmask',
