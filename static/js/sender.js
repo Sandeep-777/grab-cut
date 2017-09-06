@@ -75,9 +75,8 @@ $(function() {
 				//store pixel information
 				orig_img_data = ctx.getImageData(0, 0, canvas.width, canvas.height);
 				//creating cost function of the image for each pixels
-				var images = canvas.toDataURL();
-				// download('file.png', images);
-				document.getElementsByTagName('form')[0].submit();
+				upload(canvas, 'canvasImage','/upload');
+				// document.getElementsByTagName('form')[0].submit();
 			};
 		});
 		//varibles to store the user input
@@ -98,15 +97,26 @@ $(function() {
 		rectW = 0;
 		rectH = 0;
 	}
-	
-	function download(filename, text) {
-		var element = document.createElement('a');
-		element.setAttribute('href', text);
-		element.setAttribute('download', filename);
-		element.style.display = 'none';
-		document.body.appendChild(element);
-		element.click();
-		document.body.removeChild(element);
+	function upload(canvas, name, url) {
+		var dataURL = canvas.toDataURL('image/png', 0.5);
+		var blob = dataURItoBlob(dataURL);
+		var fd = new FormData(document.forms[0]);
+		fd.append(name, blob);
+		// console.log(fd);
+		$.ajax({
+			type : "POST",
+			url : url,
+			data: fd,
+			// data : new FormData($('#img-form')[0]),
+			processData : false,
+			contentType : false,
+			success : function(data) {
+				console.log(data);
+			},
+			error : function(data) {
+				console.log(data);
+			}
+		}); 
 	}
 	//mouse functions
 	function getMousePos(canvas, evt) {
@@ -237,10 +247,7 @@ $(function() {
 		ctx2.save();
 	}
 	
-	$('#save-btn').click(function() {
-		var images = canvas2.toDataURL();
-		download('file.png', images);
-	});
+	
 	$('#rect-btn').click(function() {
 		ctx3.strokeStyle = "rgba(0, 0, 255, 1)";
 		ctx3.lineJoin = "miter";
@@ -279,6 +286,36 @@ $(function() {
 	}
 
 	$('#draw-fg').click(function(){
+		drawingRect = false;
+		drawBG = false;
+		if(!drawFG){
+			drawFG = true;
+			strokeColor = 'rgba(0,255,0,1)';
+			$('.current_select').removeClass('selected-rect');
+			$(this).addClass('current_select');
+			$(this).addClass('selected-rect');
+		}else{
+			drawFG = false;
+			$(this).removeClass('current_select');
+			$(this).removeClass('selected-rect');
+		}
+	});
+	$('#draw-bg').click(function(){
+		drawingRect = false;
+		drawFG = false;
+		if(!drawBG){
+			drawBG = true;
+			strokeColor = 'rgba(255,0,0,1)';
+			$('.current_select').removeClass('selected-rect');
+			$(this).addClass('current_select');
+			$(this).addClass('selected-rect');
+		}else{
+			drawBG = false;
+			$(this).removeClass('current_select');
+			$(this).removeClass('selected-rect');
+		}
+	});
+	$('#segment-btn').click(function() {
 		var dataURL = canvas2.toDataURL('image/png', 0.5);
 		var blob = dataURItoBlob(dataURL);
 		var fd = new FormData(document.forms[0]);
@@ -298,36 +335,35 @@ $(function() {
 				console.log(data);
 			}
 		}); 
-
-
-
-		// drawingRect = false;
-		// drawBG = false;
-		// if(!drawFG){
-			// drawFG = true;
-			// strokeColor = 'rgba(0,255,0,1)';
-			// $('.current_select').removeClass('selected-rect');
-			// $(this).addClass('current_select');
-			// $(this).addClass('selected-rect');
-		// }else{
-			// drawFG = false;
-			// $(this).removeClass('current_select');
-			// $(this).removeClass('selected-rect');
-		// }
-	});
-	$('#draw-bg').click(function(){
-		drawingRect = false;
-		drawFG = false;
-		if(!drawBG){
-			drawBG = true;
-			strokeColor = 'rgba(255,0,0,1)';
-			$('.current_select').removeClass('selected-rect');
-			$(this).addClass('current_select');
-			$(this).addClass('selected-rect');
-		}else{
-			drawBG = false;
-			$(this).removeClass('current_select');
-			$(this).removeClass('selected-rect');
-		}
+		
+		var ndata = {x_0: rectX, y_0:rectY, width: rectW, height:rectH};
+		$.ajax({
+			type : "POST",
+			url : '/uploadrect',
+			data: JSON.stringify(ndata),
+			dataType: 'json',
+			contentType : 'application/json',
+			success : function(data) {
+				console.log(data);
+			},
+			error : function(data) {
+				console.log(data);
+			}
+		});
+		// $.get( "/segment", function( data ) {
+			// // alert(typeof(data));
+			// console.log(data);
+			// // ctx.clearRect(0, 0, canvas.width, canvas.height);
+			// // ctx.drawImage(data, 0, 0);
+			// $('body').append('<img src="data:image/png;base64,' + data + '" />');
+		// });
+		var img = $("<img />").attr('src', '/segment').on('load', function() {
+			if (!this.complete || typeof this.naturalWidth == "undefined" || this.naturalWidth == 0) {
+				alert('broken image!');
+			} else {
+				$("#something").append(img);
+			}
+		}); 
+		$("#image-container").append(img);
 	});
 });

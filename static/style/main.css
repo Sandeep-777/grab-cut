@@ -75,7 +75,13 @@ html, body{
 h1{
 	color: red;
 }
-
+#image-container{
+	position: absolute;
+	bottom: 0%;
+	width: 100%;
+	padding: 8px;
+	background-color: #444444;
+}
 
 
 

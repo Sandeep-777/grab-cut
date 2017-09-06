@@ -17,13 +17,10 @@
 		test_func({{ data|safe }})
 	</script>
 	<div id="input-container">
-		<form action = "http://localhost:5000/upload" method = "POST" id='img-form'
-			enctype = "multipart/form-data">
-			<input type = "file" name = "file" id='uploadimage' />
-			<input type = "submit" id='form-submit'/>
-		</form>
+		<input type='file' name='img' size='65' id='uploadimage' />
+		
 		<div id='btn-div'>
-			<button id='save-btn'>save</button>
+			<button id='segment-btn'>segment</button>
 			<button id='rect-btn'>Draw Rect</button>
 		
 			<button id='draw-fg'>label foreground</button>
@@ -40,5 +37,8 @@
 		<canvas id="myCanvas3" width="800" height="500"
 			style="border:1px solid #000000;">
 		</canvas>
+	</div>
+	<div id="image-container">
+		
 	</div>
 </body>
