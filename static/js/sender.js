@@ -1,4 +1,5 @@
 $(function() {
+	$.ajaxSetup({ cache: false });
 	//initialize canvas, one for image and another for drawing paths
 	var canvas = document.getElementById('myCanvas');
 	var canvas2 = document.getElementById('myCanvas2');
@@ -34,6 +35,7 @@ $(function() {
 	var rectY = 0;
 	var rectW = 0;
 	var rectH = 0;
+	var mask_click = 0;
 	
 	var drawBG = false;
 	var drawFG = false;
@@ -111,7 +113,7 @@ $(function() {
 			processData : false,
 			contentType : false,
 			success : function(data) {
-				console.log(data);
+				// console.log(data);
 			},
 			error : function(data) {
 				console.log(data);
@@ -157,6 +159,7 @@ $(function() {
 			rectY = parseInt(mousePos.y);
 			drawingRect = true;
 		} else if(drawBG||drawFG){
+			mask_click = 1;
 			addClick(mousePos.x, mousePos.y);
 			clicks = remove_redundant(clicks);
 			paint++;
@@ -191,8 +194,73 @@ $(function() {
 		e.stopPropagation();
 		if(drawRect){
 			drawingRect = false;
+			var ndata = {
+				x_0 : rectX,
+				y_0 : rectY,
+				width : rectW,
+				height : rectH
+			};
+			$.when(
+				$.ajax({
+					type : "POST",
+					url : '/uploadrect',
+					data : JSON.stringify(ndata),
+					dataType : 'json',
+					contentType : 'application/json',
+					success : function(data) {
+						console.log(data);
+					},
+					error : function(data) {
+						console.log(data);
+					}
+				})
+			).then(function() {
+				var randomh = Math.random();
+				$.get( "/segment", function( data ) {
+					console.log( "Data Loaded: " + data );
+					var img = $("<img />").attr('src', data+'?x='+randomh).on('load', function() {
+						if (!this.complete || typeof this.naturalWidth == "undefined" || this.naturalWidth == 0) {
+							alert('broken image!');
+						} else {
+							$("#image-container>img").attr('src', data+'?x='+randomh);
+						}
+					}); 
+				});
+			});
 		}else if(drawBG||drawFG){
 			paint = 0;
+			var dataURL = canvas2.toDataURL('image/png', 0.5);
+			var blob = dataURItoBlob(dataURL);
+			var fd = new FormData(document.forms[0]);
+			fd.append("canvasImage", blob);
+			$.when(
+				$.ajax({
+					type : "POST",
+					url : '/uploadmask',
+					data : fd,
+					// data : new FormData($('#img-form')[0]),
+					processData : false,
+					contentType : false,
+					success : function(data) {
+						console.log(data);
+					},
+					error : function(data) {
+						console.log(data);
+					}
+				})
+			).then(function() {
+				var randomh = Math.random();
+				$.get( "/segment", function( data ) {
+					console.log( "Data Loaded: " + data );
+					var img = $("<img />").attr('src', data+'?x='+randomh).on('load', function() {
+						if (!this.complete || typeof this.naturalWidth == "undefined" || this.naturalWidth == 0) {
+							alert('broken image!');
+						} else {
+							$("#image-container>img").attr('src', data+'?x='+randomh);
+						}
+					}); 
+				});
+			});
 		}
 	});
 	
@@ -315,55 +383,77 @@ $(function() {
 			$(this).removeClass('selected-rect');
 		}
 	});
-	$('#segment-btn').click(function() {
-		var dataURL = canvas2.toDataURL('image/png', 0.5);
-		var blob = dataURItoBlob(dataURL);
-		var fd = new FormData(document.forms[0]);
-		fd.append("canvasImage", blob);
-		// console.log(fd);
-		$.ajax({
-			type : "POST",
-			url : '/uploadmask',
-			data: fd,
-			// data : new FormData($('#img-form')[0]),
-			processData : false,
-			contentType : false,
-			success : function(data) {
-				console.log(data);
-			},
-			error : function(data) {
-				console.log(data);
-			}
-		}); 
-		
-		var ndata = {x_0: rectX, y_0:rectY, width: rectW, height:rectH};
-		$.ajax({
-			type : "POST",
-			url : '/uploadrect',
-			data: JSON.stringify(ndata),
-			dataType: 'json',
-			contentType : 'application/json',
-			success : function(data) {
-				console.log(data);
-			},
-			error : function(data) {
-				console.log(data);
-			}
-		});
-		// $.get( "/segment", function( data ) {
-			// // alert(typeof(data));
-			// console.log(data);
-			// // ctx.clearRect(0, 0, canvas.width, canvas.height);
-			// // ctx.drawImage(data, 0, 0);
-			// $('body').append('<img src="data:image/png;base64,' + data + '" />');
-		// });
-		var img = $("<img />").attr('src', '/segment').on('load', function() {
-			if (!this.complete || typeof this.naturalWidth == "undefined" || this.naturalWidth == 0) {
-				alert('broken image!');
-			} else {
-				$("#something").append(img);
-			}
-		}); 
-		$("#image-container").append(img);
-	});
+	// $('#segment-btn').click(function() {
+		// var ndata = {
+				// x_0 : rectX,
+				// y_0 : rectY,
+				// width : rectW,
+				// height : rectH
+			// };
+		// // console.log(fd);
+		// if(mask_click==1){
+			// var dataURL = canvas2.toDataURL('image/png', 0.5);
+			// var blob = dataURItoBlob(dataURL);
+			// var fd = new FormData(document.forms[0]);
+			// fd.append("canvasImage", blob);
+			// $.when(
+				// $.ajax({
+					// type : "POST",
+					// url : '/uploadmask',
+					// data : fd,
+					// // data : new FormData($('#img-form')[0]),
+					// processData : false,
+					// contentType : false,
+					// success : function(data) {
+						// console.log(data);
+					// },
+					// error : function(data) {
+						// console.log(data);
+					// }
+				// })
+			// ).then(function() {
+				// alert('here');
+				// var randomh = Math.random();
+				// $.get( "/segment", function( data ) {
+					// console.log( "Data Loaded: " + data );
+					// var img = $("<img />").attr('src', data+'?x='+randomh).on('load', function() {
+						// if (!this.complete || typeof this.naturalWidth == "undefined" || this.naturalWidth == 0) {
+							// alert('broken image!');
+						// } else {
+							// $("#image-container").append(img);
+						// }
+					// }); 
+				// });
+			// });
+		// } else {
+			// $.when(
+				// $.ajax({
+					// type : "POST",
+					// url : '/uploadrect',
+					// data : JSON.stringify(ndata),
+					// dataType : 'json',
+					// contentType : 'application/json',
+					// success : function(data) {
+						// console.log(data);
+					// },
+					// error : function(data) {
+						// console.log(data);
+					// }
+				// })
+			// ).then(function() {
+				// alert('here');
+				// var randomh = Math.random();
+				// $.get( "/segment", function( data ) {
+					// console.log( "Data Loaded: " + data );
+					// var img = $("<img />").attr('src', data+'?x='+randomh).on('load', function() {
+						// if (!this.complete || typeof this.naturalWidth == "undefined" || this.naturalWidth == 0) {
+							// alert('broken image!');
+						// } else {
+							// $("#image-container").append(img);
+						// }
+					// }); 
+				// });
+			// });
+		// }	
+	// });
 });

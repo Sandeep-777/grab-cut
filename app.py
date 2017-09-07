@@ -11,19 +11,20 @@
 #     else:
 #         print k # else print its value
 
-from flask import Flask, render_template, request, send_file, jsonify
+from flask import Flask, render_template, request, send_file, jsonify, url_for
 from werkzeug import secure_filename
 import json
+import Image
 import numpy as np
 import cv2
 
 
-img = cv2.imread('images/inputs/test.png')
+img = cv2.imread('static/images/inputs/test.png')
 img2 = img.copy();
 rect =  [0,0,100,100];
 masl = 0;
 mask2 = 0;
-rect = 0
+rect_or_mask = 0
 
 app = Flask(__name__)
 
@@ -43,28 +44,31 @@ def add_header(r):
 @app.route('/upload', methods=['GET', 'POST'])
 def upload_file():
     if request.method == 'POST':
-        global img, img2
+        global img, img2, mask, rect
         f = request.files['canvasImage']
-        filename = 'images/inputs/'+secure_filename(f.filename) # gives secure filename
+        filename = 'static/images/inputs/'+secure_filename(f.filename) # gives secure filename
         f.save(filename)
         im = cv2.imread(filename)
-        img = im.copy();
-        img2 = im.copy();
-        cv2.imwrite('images/outputs/test_img.png', im)
+        img = im.copy()
+        img2 = im.copy()
+        height, width = img.shape[:2]
+        rect = (0, 0, width, height)
+        mask = np.zeros(img.shape[:2], dtype=np.uint8)
+        cv2.imwrite('static/images/outputs/test_img.png', im)
         # return render_template("main.html", image_name=f.filename)
-        return send_file('images/outputs/test_img.png', mimetype='image/png')
+        return send_file('static/images/outputs/test_img.png', mimetype='image/png')
         # return render_template('main.html')
 
 
 @app.route('/uploadrect', methods=['GET', 'POST'])
 def upload_rect():
     if request.method == 'POST':
-        global rect
+        global rect, rect_or_mask
+        rect_or_mask = 1
         # print request.data
         # print request.get_json()
         f = request.json
         rect = (f['x_0'], f['y_0'], f['width'], f['height'])
-        print rect;
         return jsonify(rect)
 
 
@@ -73,37 +77,46 @@ def upload_mask():
     if request.method == 'POST':
         global img, img2, mask
         f = request.files['canvasImage']
-        filename = 'images/inputs/'+secure_filename(f.filename)+'.png'  # gives secure filename
+        filename = 'static/images/inputs/'+secure_filename(f.filename)+'.png'  # gives secure filename
         f.save(filename)
         im = cv2.imread(filename, -1)
-        mask = np.zeros(img.shape[:2], dtype=np.uint8)
         newmask = im[:, :, 2]
-        print(newmask)
-        mask[newmask == 0] = 0
-        mask[newmask == 255] = 1
-        print(mask)
-        cv2.imwrite('images/outputs/test_img.png', im)
-        # return render_template("main.html", image_name=f.filename)
-        # return send_file('images/outputs/test_img.png', mimetype='image/png')
-        data = {'img': im, 'site': 'stackoverflow.com'}
+        newmaskfg = im[:, :, 1]
+        mask[newmaskfg == 255] = 1
+        mask[newmask == 255] = 0
+        cv2.imwrite('static/images/outputs/test_img.png', im)
         return 'success'
         # return render_template('main.html', data=data)
 
 
 @app.route('/segment', methods=['GET', 'POST'])
 def segment():
-    global img, img2, mask, mask2, rect
+    global img, img2, mask, mask2, rect, rect_or_mask
+    output = np.zeros(img.shape, np.uint8)
     bgdmodel = np.zeros((1, 65), np.float64)
     fgdmodel = np.zeros((1, 65), np.float64)
-    mask = np.zeros(img.shape[:2], dtype=np.uint8)
-    output = np.zeros(img.shape, np.uint8)
-    # rect = (0, 0, 50, 50)
-    cv2.grabCut(img2, mask, rect, bgdmodel, fgdmodel, 1, cv2.GC_INIT_WITH_RECT)
-    cv2.grabCut(img2, mask, rect, bgdmodel, fgdmodel, 1, cv2.GC_INIT_WITH_MASK)
+    print mask
+    if rect_or_mask == 1:
+        cv2.grabCut(img2, mask, rect, bgdmodel, fgdmodel, 1, cv2.GC_INIT_WITH_RECT)
+    else:
+        cv2.grabCut(img2, mask, rect, bgdmodel, fgdmodel, 1, cv2.GC_INIT_WITH_MASK)
+    print mask
     mask2 = np.where((mask == 1) + (mask == 3), 255, 0).astype('uint8')
     output = cv2.bitwise_and(img2, img2, mask=mask2)
-    cv2.imwrite('images/outputs/output.png', output)
-    return send_file('images/outputs/output.png', mimetype='image/png')
+    # cv2.imwrite('images/outputs/output.png', output)
+    b_channel, g_channel, r_channel = cv2.split(output)
+    alpha = mask2
+    # converting channel to rgb from bgr for PIL and auto cropping
+    output2 = cv2.merge((r_channel, g_channel, b_channel, mask2))
+    image = Image.fromarray(output2)
+    imageSize = image.size
+    imageBox = image.getbbox()
+    cropped = image.crop(imageBox)
+    cropped.save('static/images/outputs/output.png')
+    rect_or_mask = 0;
+
+    return url_for('static', filename='images/outputs/output.png')
+    # return send_file('images/outputs/output.png', mimetype='image/png')
 
 
 @app.route('/main')
