@@ -8,14 +8,6 @@
 	<script src="{{ url_for('static', filename='js/sender.js')}}"></script>
 </head>
 <body>
-	<script>
-		var global_img; 
-		function test_func(data) {
-			global_img = data.img;
-			console.log(global_img)
-		}
-		test_func({{ data|safe }})
-	</script>
 	<div id="input-container">
 		<input type='file' name='img' size='65' id='uploadimage' />
 		

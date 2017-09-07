@@ -1,32 +1,18 @@
-# import cv2
-# img = cv2.imread('sof.jpg') # load a dummy image
-# while(1):
-#     img = cv2.imread('ball.png')
-#     cv2.imshow('input',img)
-#     k = cv2.waitKey(33)
-#     if k==27:    # Esc key to stop
-#         break
-#     elif k==-1:  # normally -1 returned,so don't print it
-#         continue
-#     else:
-#         print k # else print its value
-
 from flask import Flask, render_template, request, send_file, jsonify, url_for
 from werkzeug import secure_filename
-import json
 import Image
 import numpy as np
 import cv2
 
-
 img = cv2.imread('static/images/inputs/test.png')
-img2 = img.copy();
-rect =  [0,0,100,100];
-masl = 0;
-mask2 = 0;
+img2 = img.copy()
+rect = [0, 0, 100, 100]
+masl = 0
+mask2 = 0
 rect_or_mask = 0
 
 app = Flask(__name__)
+
 
 @app.after_request
 def add_header(r):
@@ -46,7 +32,7 @@ def upload_file():
     if request.method == 'POST':
         global img, img2, mask, rect
         f = request.files['canvasImage']
-        filename = 'static/images/inputs/'+secure_filename(f.filename) # gives secure filename
+        filename = 'static/images/inputs/' + secure_filename(f.filename)  # gives secure filename
         f.save(filename)
         im = cv2.imread(filename)
         img = im.copy()
@@ -77,7 +63,7 @@ def upload_mask():
     if request.method == 'POST':
         global img, img2, mask
         f = request.files['canvasImage']
-        filename = 'static/images/inputs/'+secure_filename(f.filename)+'.png'  # gives secure filename
+        filename = 'static/images/inputs/' + secure_filename(f.filename) + '.png'  # gives secure filename
         f.save(filename)
         im = cv2.imread(filename, -1)
         newmask = im[:, :, 2]
@@ -119,10 +105,15 @@ def segment():
     # return send_file('images/outputs/output.png', mimetype='image/png')
 
 
+@app.route('/')
+def index():
+    return render_template('main.html')
+
+
 @app.route('/main')
-def get_post_javascript_data():
-    data = [1, 'foo']
-    return render_template('main.html', data=json.dumps(data))
+def main():
+    return render_template('main.html')
+
 
 if __name__ == '__main__':
     app.run(debug=True)

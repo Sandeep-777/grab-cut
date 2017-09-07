@@ -354,7 +354,7 @@ $(function() {
 	}
 
 	$('#draw-fg').click(function(){
-		drawingRect = false;
+		drawRect = false;
 		drawBG = false;
 		if(!drawFG){
 			drawFG = true;
@@ -369,7 +369,7 @@ $(function() {
 		}
 	});
 	$('#draw-bg').click(function(){
-		drawingRect = false;
+		drawRect = false;
 		drawFG = false;
 		if(!drawBG){
 			drawBG = true;
